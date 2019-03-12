@@ -33,7 +33,7 @@ if(${CMAKE_VERSION} VERSION_GREATER "3.10.0")
     include(GoogleTest)
 endif()
 
-add_executable(check test/index_test.cpp )
+add_executable(check test/index_test.cpp test/utility.cpp)
 target_link_libraries(check gtest_main implementations)
 
 if(${CMAKE_VERSION} VERSION_GREATER "3.10.0")

@@ -3,6 +3,7 @@
 #include "index.hpp"
 
 #include "std_multimap.hpp"
+#include "utility.hpp"
 #include "utils.hpp"
 
 #include <algorithm>
@@ -41,20 +42,16 @@ protected:
 
 TEST_P(IndexTest, basic_insertion)
 {
-    index_->insert("a", 1);
-    index_->insert("a", 2);
-    index_->insert("a", 3);
-    index_->insert("b", 1);
-    index_->insert("c", 2);
+    const std::map<std::string, std::list<uint64_t>> test_db
+        = {{"kw_1", {0, 1}}, {"kw_2", {0}}, {"kw_3", {0}}};
 
-    auto res = index_->search("a");
+    sse::test::insert_database(index_.get(), test_db);
 
-    std::sort(res.begin(), res.end());
-    EXPECT_EQ(res, std::vector<sse::insecure::Index::document_type>({1, 2, 3}));
+    sse::test::test_search_correctness(index_.get(), test_db);
 }
 
 INSTANTIATE_TEST_SUITE_P(BasicInstantiation,
                          IndexTest,
                          ::testing::Values(std::make_pair(&create_std_multimap,
                                                           "toto")));
-}
+} // namespace sse
