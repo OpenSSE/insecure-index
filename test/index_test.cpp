@@ -3,29 +3,36 @@
 #include "index.hpp"
 
 #include "std_multimap.hpp"
+#include "utils.hpp"
 
 #include <algorithm>
 #include <memory>
+#include <utility>
 
 #include <gtest/gtest.h>
 
-typedef sse::insecure::Index* CreateIndexFunc();
+namespace sse {
+typedef sse::insecure::Index* CreateIndexFunc(const std::string& path);
 
-sse::insecure::Index* create_std_multimap()
+sse::insecure::Index* create_std_multimap(const std::string& path)
 {
+    (void)path;
     return new sse::insecure::StdMultiMap();
 }
 
-class IndexTest : public ::testing::TestWithParam<CreateIndexFunc*>
+class IndexTest
+    : public ::testing::TestWithParam<std::pair<CreateIndexFunc*, std::string>>
 {
 public:
     void SetUp() override
     {
-        index_.reset((*GetParam())());
+        CreateIndexFunc* factory = GetParam().first;
+        index_.reset((*factory)(GetParam().second));
     }
     void TearDown() override
     {
         index_.reset(nullptr);
+        utility::remove_directory(GetParam().second);
     }
 
 protected:
@@ -48,4 +55,6 @@ TEST_P(IndexTest, basic_insertion)
 
 INSTANTIATE_TEST_SUITE_P(BasicInstantiation,
                          IndexTest,
-                         ::testing::Values(&create_std_multimap));
+                         ::testing::Values(std::make_pair(&create_std_multimap,
+                                                          "toto")));
+}

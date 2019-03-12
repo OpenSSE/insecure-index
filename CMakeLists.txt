@@ -7,7 +7,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 find_package(RocksDB REQUIRED)
 
-add_library(implementations SHARED src/std_multimap.cpp)
+add_library(implementations SHARED src/std_multimap.cpp src/utils.cpp)
 target_include_directories(
     implementations
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src
