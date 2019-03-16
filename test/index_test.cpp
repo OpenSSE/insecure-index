@@ -2,6 +2,7 @@
 
 #include "index.hpp"
 
+#include "rocksdb_multimap.hpp"
 #include "std_multimap.hpp"
 #include "utility.hpp"
 #include "utils.hpp"
@@ -19,6 +20,12 @@ sse::insecure::Index* create_std_multimap(const std::string& path)
 {
     (void)path;
     return new sse::insecure::StdMultiMap();
+}
+
+sse::insecure::Index* create_rocksdb_multimap(const std::string& path)
+{
+    (void)path;
+    return new sse::insecure::RocksDBMultiMap(path);
 }
 
 class IndexTest
@@ -50,8 +57,10 @@ TEST_P(IndexTest, basic_insertion)
     sse::test::test_search_correctness(index_.get(), test_db);
 }
 
-INSTANTIATE_TEST_SUITE_P(BasicInstantiation,
-                         IndexTest,
-                         ::testing::Values(std::make_pair(&create_std_multimap,
-                                                          "toto")));
+INSTANTIATE_TEST_SUITE_P(
+    BasicInstantiation,
+    IndexTest,
+    ::testing::Values(std::make_pair(&create_std_multimap, "StdMultimap"),
+                      std::make_pair(&create_rocksdb_multimap,
+                                     "RocksDBMultimap")));
 } // namespace sse

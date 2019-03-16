@@ -7,11 +7,23 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 find_package(RocksDB REQUIRED)
 
-add_library(implementations SHARED src/std_multimap.cpp src/utils.cpp)
+add_library(
+    implementations
+    SHARED
+    src/std_multimap.cpp
+    src/rocksdb_multimap.cpp
+    src/utils.cpp
+)
+
 target_include_directories(
     implementations
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src
     PUBLIC ${ROCKSDB_INCLUDE_DIRS}
+)
+
+target_link_libraries(
+    implementations
+    ${ROCKSDB_LIBRARIES}
 )
 
 target_compile_features(
@@ -27,7 +39,6 @@ enable_testing()
 # Build googletest for the tests
 set(BUILD_GMOCK OFF CACHE BOOL "Disable GMock" FORCE)
 add_subdirectory(externals/googletest)
-
 
 if(${CMAKE_VERSION} VERSION_GREATER "3.10.0")
     include(GoogleTest)
