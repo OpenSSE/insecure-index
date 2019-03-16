@@ -24,7 +24,6 @@ sse::insecure::Index* create_std_multimap(const std::string& path)
 
 sse::insecure::Index* create_rocksdb_multimap(const std::string& path)
 {
-    (void)path;
     return new sse::insecure::RocksDBMultiMap(path);
 }
 

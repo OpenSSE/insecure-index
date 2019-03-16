@@ -24,3 +24,7 @@ function(add_bench_target target_name target_source)
 endfunction()
 
 add_bench_target(benchmark_zipf bench_zipf.cpp)
+
+
+add_executable(bench_util bench_util.cpp)
+target_link_libraries(bench_util implementations)

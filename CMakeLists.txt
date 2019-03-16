@@ -6,6 +6,7 @@ project(
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 find_package(RocksDB REQUIRED)
+find_package(spdlog REQUIRED)
 
 add_library(
     implementations
@@ -13,6 +14,7 @@ add_library(
     src/std_multimap.cpp
     src/rocksdb_multimap.cpp
     src/utils.cpp
+    src/logger.cpp
 )
 
 target_include_directories(
@@ -21,7 +23,7 @@ target_include_directories(
     PUBLIC ${ROCKSDB_INCLUDE_DIRS}
 )
 
-target_link_libraries(implementations ${ROCKSDB_LIBRARIES})
+target_link_libraries(implementations ${ROCKSDB_LIBRARIES} spdlog::spdlog)
 
 target_compile_features(
     implementations
@@ -50,6 +52,5 @@ if(${CMAKE_VERSION} VERSION_GREATER "3.10.0")
 else()
     add_test(check check)
 endif()
-
 
 add_subdirectory(benchmark)
