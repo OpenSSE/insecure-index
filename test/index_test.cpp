@@ -57,10 +57,20 @@ TEST_P(IndexTest, basic_insertion)
     sse::test::test_search_correctness(index_.get(), test_db);
 }
 
+struct IndexPrintToStringParamName
+{
+    template<class ParamType>
+    std::string operator()(const testing::TestParamInfo<ParamType>& info) const
+    {
+        return (info.param.second);
+    }
+};
+
 INSTANTIATE_TEST_SUITE_P(
     BasicInstantiation,
     IndexTest,
     ::testing::Values(std::make_pair(&create_std_multimap, "StdMultimap"),
                       std::make_pair(&create_rocksdb_multimap,
-                                     "RocksDBMultimap")));
+                                     "RocksDBMultimap")),
+    IndexPrintToStringParamName());
 } // namespace sse
