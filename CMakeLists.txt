@@ -21,10 +21,7 @@ target_include_directories(
     PUBLIC ${ROCKSDB_INCLUDE_DIRS}
 )
 
-target_link_libraries(
-    implementations
-    ${ROCKSDB_LIBRARIES}
-)
+target_link_libraries(implementations ${ROCKSDB_LIBRARIES})
 
 target_compile_features(
     implementations
@@ -44,7 +41,8 @@ if(${CMAKE_VERSION} VERSION_GREATER "3.10.0")
     include(GoogleTest)
 endif()
 
-add_executable(check test/index_test.cpp test/utility.cpp)
+add_executable(check test/index_test.cpp test/zipf_test.cpp test/utility.cpp)
+
 target_link_libraries(check gtest_main implementations)
 
 if(${CMAKE_VERSION} VERSION_GREATER "3.10.0")
