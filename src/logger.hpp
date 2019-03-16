@@ -24,6 +24,7 @@
 #include <spdlog/spdlog.h>
 
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <iomanip>
 #include <memory>
@@ -44,6 +45,9 @@ void set_logging_level(spdlog::level::level_enum log_level);
 class Benchmark
 {
 public:
+    template<typename T>
+    friend class ThroughputBenchmark;
+
     static void set_benchmark_file(const std::string& path);
     static void set_log_to_console();
 
@@ -60,7 +64,7 @@ public:
 
     virtual ~Benchmark();
 
-private:
+protected:
     static std::shared_ptr<spdlog::logger> benchmark_logger_;
 
     std::string                                    format_;
@@ -74,6 +78,73 @@ class SearchBenchmark : public Benchmark
 {
 public:
     explicit SearchBenchmark(std::string message);
+};
+
+template<typename T>
+class ThroughputBenchmark
+{
+public:
+    ThroughputBenchmark(std::string                   format,
+                        std::chrono::duration<double> sampling_interval,
+                        std::atomic<T>&               observed_value)
+        : m_format(std::move(format)), m_sampling_interval(sampling_interval),
+          m_observed_value(observed_value)
+    {
+    }
+
+    ThroughputBenchmark(std::string format, std::atomic<T>& observed_value)
+        : m_format(std::move(format)),
+          m_sampling_interval(std::chrono::seconds(1)),
+          m_observed_value(observed_value)
+    {
+    }
+
+    void run_loop()
+    {
+        T prev_value;
+
+        auto t1    = std::chrono::high_resolution_clock::now();
+        prev_value = m_observed_value;
+
+        std::this_thread::sleep_for(m_sampling_interval);
+
+        while (!m_stop) {
+            auto   t2         = std::chrono::high_resolution_clock::now();
+            T      new_value  = m_observed_value;
+            size_t diff_value = new_value - prev_value;
+
+            std::chrono::duration<double> time_s
+                = t2 - t1; // get the duration in seconds
+            // compute the throughput
+            double throughput = diff_value / time_s.count();
+            if (Benchmark::benchmark_logger_) {
+                Benchmark::benchmark_logger_->trace(
+                    m_format.c_str(), throughput, time_s.count());
+            }
+
+            t1         = std::chrono::high_resolution_clock::now();
+            prev_value = m_observed_value;
+            std::this_thread::sleep_for(m_sampling_interval);
+        }
+    }
+
+    std::thread run_loop_in_thread()
+    {
+        return std::thread([this]() { this->run_loop(); });
+    }
+
+
+    void stop()
+    {
+        m_stop = true;
+    }
+
+private:
+    std::string                         m_format;
+    const std::chrono::duration<double> m_sampling_interval;
+
+    std::atomic_bool m_stop{false};
+    std::atomic<T>&  m_observed_value;
 };
 
 } // namespace sse

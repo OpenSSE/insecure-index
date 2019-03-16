@@ -6,9 +6,11 @@
 
 #include <cstdlib>
 
+#include <atomic>
 #include <iostream>
 #include <memory>
 #include <string>
+#include <thread>
 
 constexpr auto base_path = "bench_db/";
 
@@ -22,8 +24,9 @@ sse::insecure::Index* create_rocksdb_multimap(const std::string& path)
 struct DBCreationBenchmark : public sse::Benchmark
 {
     explicit DBCreationBenchmark(std::string index_type)
-        : sse::Benchmark("[" + std::move(index_type)
-                         + "] DB creation ({0} entries): {1} ms, {2} ms/entry")
+        : sse::Benchmark(
+              "[" + std::move(index_type)
+              + "] DB creation ({0} entries): {1} ms, {2} ms/entry on average")
     {
     }
 };
@@ -48,18 +51,32 @@ void create_test_database(const std::string& index_type,
     std::uniform_int_distribution<sse::insecure::Index::document_type>
         doc_distrib;
 
+    std::atomic<size_t> n_entries_processed{0};
+
+    sse::ThroughputBenchmark<size_t> throughput_bench("[" + index_type
+                                                          + "] {0} entries/s",
+                                                      std::chrono::seconds(1),
+                                                      n_entries_processed);
+
     std::cerr << "[" << index_type << "] Start the database creation...\n";
 
     DBCreationBenchmark entire_construction_bench(index_type);
 
-    for (size_t i = 0; i < n_entries; i++) {
+    std::thread throughput_bench_thread = throughput_bench.run_loop_in_thread();
+
+    for (; n_entries_processed < n_entries; n_entries_processed++) {
         size_t                              r   = kw_distrib(gen);
         sse::insecure::Index::document_type doc = doc_distrib(gen);
 
         index->insert(std::to_string(r), doc);
     }
 
-    entire_construction_bench.set_count(n_entries);
+    throughput_bench.stop();
+    entire_construction_bench.stop(n_entries);
+
+    throughput_bench_thread.join();
+
+    std::cerr << "[" << index_type << "] Database creation complete!\n";
 }
 
 int main(int argc, char* argv[])
