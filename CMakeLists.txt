@@ -50,3 +50,6 @@ if(${CMAKE_VERSION} VERSION_GREATER "3.10.0")
 else()
     add_test(check check)
 endif()
+
+
+add_subdirectory(benchmark)
