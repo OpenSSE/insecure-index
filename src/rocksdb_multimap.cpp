@@ -81,15 +81,9 @@ std::vector<Index::document_type> RocksDBMultiMap::search(
     rocksdb::Status s = db_->Get(rocksdb::ReadOptions(), keyword, &data);
 
     if (s.ok()) {
-        std::vector<Index::document_type> result;
-        constexpr size_t elt_size = sizeof(Index::document_type);
-
-        result.resize(data.length() / elt_size);
-        memcpy(reinterpret_cast<char*>(result.data()),
-               data.data(),
-               result.size() * elt_size);
-
-        return result;
+        std::vector<Index::document_type> results;
+        Index::deserialize_document_list(data, &results);
+        return results;
     }
     return {};
 }

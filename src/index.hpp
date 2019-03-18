@@ -5,6 +5,11 @@
 #include <string>
 #include <vector>
 
+namespace rocksdb {
+class Slice;
+} // namespace rocksdb
+
+
 namespace sse {
 namespace insecure {
 
@@ -21,6 +26,17 @@ public:
 
     virtual void insert(const keyword_type& keyword, document_type document)
         = 0;
+
+
+    static bool deserialize_document_list(
+        const std::string&                 data,
+        std::vector<Index::document_type>* result);
+    static bool deserialize_document_list(
+        const rocksdb::Slice&              data,
+        std::vector<Index::document_type>* result);
+
+    // static std::string serialize_document_list(
+    // const std::vector<Index::document_type> doc_list);
 };
 
 } // namespace insecure

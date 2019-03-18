@@ -11,8 +11,10 @@ find_package(spdlog REQUIRED)
 add_library(
     implementations
     SHARED
+    src/index.cpp
     src/std_multimap.cpp
     src/rocksdb_multimap.cpp
+    src/rocksdb_merge_multimap
     src/utils.cpp
     src/logger.cpp
 )

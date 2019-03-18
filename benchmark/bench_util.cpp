@@ -1,5 +1,6 @@
 #include "index.hpp"
 #include "logger.hpp"
+#include "rocksdb_merge_multimap.hpp"
 #include "rocksdb_multimap.hpp"
 #include "utils.hpp"
 #include "zipfian_distribution.hpp"
@@ -19,6 +20,11 @@ typedef sse::insecure::Index* CreateIndexFunc(const std::string& path);
 sse::insecure::Index* create_rocksdb_multimap(const std::string& path)
 {
     return new sse::insecure::RocksDBMultiMap(path);
+}
+
+sse::insecure::Index* create_rocksdb_merge_multimap(const std::string& path)
+{
+    return new sse::insecure::RocksDBMergeMultiMap(path);
 }
 
 struct DBCreationBenchmark : public sse::Benchmark
@@ -96,6 +102,9 @@ int main(int argc, char* argv[])
     if (strcasecmp(arg_index_type, "RocksDB") == 0) {
         index_factory = &create_rocksdb_multimap;
         index_type    = "RocksDB";
+    } else if (strcasecmp(arg_index_type, "RocksDBMerge") == 0) {
+        index_factory = &create_rocksdb_merge_multimap;
+        index_type    = "RocksDBMerge";
     } else {
         std::cerr << "Invalid index type. <index_type> must be "
                      "chosen from the following list:\n\t\t RocksDB\n";

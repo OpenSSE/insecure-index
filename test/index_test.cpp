@@ -2,6 +2,7 @@
 
 #include "index.hpp"
 
+#include "rocksdb_merge_multimap.hpp"
 #include "rocksdb_multimap.hpp"
 #include "std_multimap.hpp"
 #include "utility.hpp"
@@ -25,6 +26,11 @@ sse::insecure::Index* create_std_multimap(const std::string& path)
 sse::insecure::Index* create_rocksdb_multimap(const std::string& path)
 {
     return new sse::insecure::RocksDBMultiMap(path);
+}
+
+sse::insecure::Index* create_rocksdb_merge_multimap(const std::string& path)
+{
+    return new sse::insecure::RocksDBMergeMultiMap(path);
 }
 
 class IndexTest
@@ -68,8 +74,9 @@ struct IndexPrintToStringParamName
 INSTANTIATE_TEST_SUITE_P(
     BasicInstantiation,
     IndexTest,
-    ::testing::Values(std::make_pair(&create_std_multimap, "StdMultimap"),
-                      std::make_pair(&create_rocksdb_multimap,
-                                     "RocksDBMultimap")),
+    ::testing::Values(
+        std::make_pair(&create_std_multimap, "StdMultimap"),
+        std::make_pair(&create_rocksdb_multimap, "RocksDBMultimap"),
+        std::make_pair(&create_rocksdb_multimap, "RocksDBMergeMultimap")),
     IndexPrintToStringParamName());
 } // namespace sse
