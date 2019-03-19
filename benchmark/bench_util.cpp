@@ -13,7 +13,7 @@
 #include <string>
 #include <thread>
 
-constexpr auto base_path = "bench_db/";
+// constexpr auto base_path = "bench_db/";
 
 typedef sse::insecure::Index* CreateIndexFunc(const std::string& path);
 
@@ -38,12 +38,13 @@ struct DBCreationBenchmark : public sse::Benchmark
 };
 
 
-void create_test_database(const std::string& index_type,
+void create_test_database(const std::string& base_path,
+                          const std::string& index_type,
                           CreateIndexFunc*   index_factory,
                           const size_t       n_keywords,
                           const size_t       n_entries)
 {
-    std::string path = base_path + index_type;
+    std::string path = base_path + "/" + index_type;
 
     std::cerr << "[" << index_type << "] Creating the database at " << path
               << "\n";
@@ -87,15 +88,18 @@ void create_test_database(const std::string& index_type,
 
 int main(int argc, char* argv[])
 {
-    if (argc <= 3) {
-        std::cerr << "Usage: bench_util <index_type> <n_keywords> "
-                     "<n_entries>\n\t<index_type> must be "
-                     "chosen from the following list:\n\t\t RocksDB\n";
+    if (argc <= 4) {
+        std::cerr
+            << "Usage: bench_util <bench_db_path> <index_type> <n_keywords> "
+               "<n_entries>\n\t<index_type> must be "
+               "chosen from the following list:\n\t\t RocksDB\n";
 
         return -1;
     }
 
-    char*            arg_index_type = argv[1];
+    std::string base_path(argv[1]);
+
+    char*            arg_index_type = argv[2];
     std::string      index_type;
     CreateIndexFunc* index_factory = nullptr;
 
@@ -119,8 +123,8 @@ int main(int argc, char* argv[])
     }
 
 
-    size_t n_keywords = atoll(argv[2]);
-    size_t n_entries  = atoll(argv[3]);
+    size_t n_keywords = atoll(argv[3]);
+    size_t n_entries  = atoll(argv[4]);
 
     std::cerr << "Chosen index type: " << index_type << "\n";
     std::cerr << "Number of distinct keywords: " << std::to_string(n_keywords)
@@ -129,7 +133,8 @@ int main(int argc, char* argv[])
 
     sse::Benchmark::set_log_to_console();
 
-    create_test_database(index_type, index_factory, n_keywords, n_entries);
+    create_test_database(
+        base_path, index_type, index_factory, n_keywords, n_entries);
 
     return 0;
 }

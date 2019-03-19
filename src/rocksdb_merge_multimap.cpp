@@ -31,6 +31,7 @@ public:
                                                   &existing_vec)) {
                 // if existing_value is corrupted, treat it as 0
                 rocksdb::Log(logger, "existing value corruption");
+                std::cerr << "corruption\n";
                 existing_vec = {};
             }
         }
@@ -39,6 +40,7 @@ public:
         if (!Index::deserialize_document_list(value, &deserialized_vec)) {
             // if operand is corrupted, treat it as 0
             Log(logger, "operand value corruption");
+            std::cerr << "corruption\n";
             deserialized_vec = {};
         }
 
@@ -103,12 +105,6 @@ std::vector<Index::document_type> RocksDBMergeMultiMap::search(
 void RocksDBMergeMultiMap::insert(const Index::keyword_type& keyword,
                                   Index::document_type       document)
 {
-    // get the existing results
-    std::vector<Index::document_type> previous_results = search(keyword);
-
-    // append the new result
-    previous_results.push_back(document);
-
     // serialize the vector
     constexpr size_t elt_size = sizeof(Index::document_type);
     rocksdb::Slice   slice(reinterpret_cast<const char*>(&document), elt_size);

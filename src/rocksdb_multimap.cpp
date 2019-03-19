@@ -82,7 +82,9 @@ std::vector<Index::document_type> RocksDBMultiMap::search(
 
     if (s.ok()) {
         std::vector<Index::document_type> results;
-        Index::deserialize_document_list(data, &results);
+        if (!Index::deserialize_document_list(data, &results)) {
+            std::cerr << "Corruption!\n";
+        }
         return results;
     }
     return {};

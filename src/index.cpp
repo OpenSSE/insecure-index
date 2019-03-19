@@ -36,7 +36,7 @@ bool Index::deserialize_document_list(const rocksdb::Slice&              data,
 
     memcpy(reinterpret_cast<char*>(result->data()), data.data(), cpy_size);
 
-    return (cpy_size != data.size());
+    return (cpy_size == data.size());
 }
 } // namespace insecure
 } // namespace sse
