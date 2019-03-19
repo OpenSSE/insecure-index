@@ -92,6 +92,44 @@ public:
     //     return true;
     // }
 
+    // virtual bool Merge(const rocksdb::Slice& key,
+    //                    const rocksdb::Slice* existing_value,
+    //                    const rocksdb::Slice& value,
+    //                    std::string*          new_value,
+    //                    rocksdb::Logger*      logger) const override
+    // {
+    //     if (!existing_value) {
+    //         *new_value = std::string(value.data(), value.size());
+    //         return true;
+    //     }
+    //     std::array<char, 1024> buffer;
+    //     char*                  data_ptr = nullptr;
+
+    //     size_t concat_size = value.size();
+    //     if (existing_value) {
+    //         concat_size += existing_value->size();
+    //     }
+
+    //     if (concat_size > buffer.size()) {
+    //         data_ptr = new char[concat_size];
+    //     } else {
+    //         data_ptr = buffer.data();
+    //     }
+    //     std::memcpy(data_ptr, value.data(), value.size());
+    //     std::memcpy(data_ptr + value.size(),
+    //                 existing_value->data(),
+    //                 existing_value->size());
+
+    //     *new_value = std::string(data_ptr, concat_size);
+
+    //     if (concat_size > buffer.size()) {
+    //         delete[] data_ptr;
+    //     }
+
+    //     return true;
+    // }
+
+
     virtual bool Merge(const rocksdb::Slice& key,
                        const rocksdb::Slice* existing_value,
                        const rocksdb::Slice& value,
@@ -102,29 +140,13 @@ public:
             *new_value = std::string(value.data(), value.size());
             return true;
         }
-        std::array<char, 1024> buffer;
-        char*                  data_ptr = nullptr;
 
-        size_t concat_size = value.size();
-        if (existing_value) {
-            concat_size += existing_value->size();
-        }
+        size_t concat_size = value.size() + existing_value->size();
 
-        if (concat_size > buffer.size()) {
-            data_ptr = new char[concat_size];
-        } else {
-            data_ptr = buffer.data();
-        }
-        std::memcpy(data_ptr, value.data(), value.size());
-        std::memcpy(data_ptr + value.size(),
-                    existing_value->data(),
-                    existing_value->size());
-
-        *new_value = std::string(data_ptr, concat_size);
-
-        if (concat_size > buffer.size()) {
-            delete[] data_ptr;
-        }
+        *new_value = std::string();
+        new_value->reserve(concat_size); // only one memory allocation here
+        new_value->append(value.data(), value.size());
+        new_value->append(existing_value->data(), existing_value->size());
 
         return true;
     }
