@@ -19,7 +19,7 @@ bool Index::deserialize_document_list(const std::string&                 data,
 
     memcpy(reinterpret_cast<char*>(result->data()), data.data(), cpy_size);
 
-    return (cpy_size != data.length());
+    return (cpy_size == data.length());
 }
 
 bool Index::deserialize_document_list(const rocksdb::Slice&              data,
