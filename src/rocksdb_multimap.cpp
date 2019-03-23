@@ -90,30 +90,56 @@ std::vector<Index::document_type> RocksDBMultiMap::search(
     return {};
 }
 
+// void RocksDBMultiMap::insert(const Index::keyword_type& keyword,
+//                              Index::document_type       document)
+// {
+//     // get the existing results
+//     std::vector<Index::document_type> previous_results = search(keyword);
+
+//     // append the new result
+//     previous_results.push_back(document);
+
+//     // serialize the vector
+//     constexpr size_t elt_size = sizeof(Index::document_type);
+//     rocksdb::Slice slice(reinterpret_cast<const
+//     char*>(previous_results.data()),
+//                          previous_results.size() * elt_size);
+
+//     rocksdb::Status s = db_->Put(rocksdb::WriteOptions(), keyword, slice);
+
+//     if (!s.ok()) {
+//         std::cerr << "Unable to insert pair in the database\nkeyword="
+//                   << keyword
+//                   << "\ndata=" + slice.ToString(true) + "\nRocksdb status: "
+//                   << s.ToString();
+//     }
+// }
+
+
+// Faster (less allocations) version of the previous implementation
+
 void RocksDBMultiMap::insert(const Index::keyword_type& keyword,
                              Index::document_type       document)
 {
     // get the existing results
-    std::vector<Index::document_type> previous_results = search(keyword);
+    std::string     data;
+    rocksdb::Status s = db_->Get(rocksdb::ReadOptions(), keyword, &data);
 
-    // append the new result
-    previous_results.push_back(document);
+    if (!s.ok() && !s.IsNotFound()) {
+        std::cerr << "Issue when appending a result\n";
+    }
 
-    // serialize the vector
-    constexpr size_t elt_size = sizeof(Index::document_type);
-    rocksdb::Slice slice(reinterpret_cast<const char*>(previous_results.data()),
-                         previous_results.size() * elt_size);
+    data.append(reinterpret_cast<const char*>(&document), sizeof(document));
 
-    rocksdb::Status s = db_->Put(rocksdb::WriteOptions(), keyword, slice);
+
+    s = db_->Put(rocksdb::WriteOptions(), keyword, data);
 
     if (!s.ok()) {
         std::cerr << "Unable to insert pair in the database\nkeyword="
                   << keyword
-                  << "\ndata=" + slice.ToString(true) + "\nRocksdb status: "
-                  << s.ToString();
+                  << "\ndata=" + data + "\nRocksdb status: " << s.ToString();
     }
 }
-
 
 } // namespace insecure
 } // namespace sse
