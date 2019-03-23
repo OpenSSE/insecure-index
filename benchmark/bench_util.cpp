@@ -83,7 +83,7 @@ void create_test_database(const std::string& base_path,
 
     throughput_bench_thread.join();
 
-    std::cerr << "[" << index_type << "] Database creation complete!\n";
+    std::cerr << "[" << index_type << "] Database creation completed!\n";
 }
 
 int main(int argc, char* argv[])
@@ -92,7 +92,8 @@ int main(int argc, char* argv[])
         std::cerr
             << "Usage: bench_util <bench_db_path> <index_type> <n_keywords> "
                "<n_entries>\n\t<index_type> must be "
-               "chosen from the following list:\n\t\t RocksDB\n";
+               "chosen from the following list:\n\t\t RocksDB\n\t\t "
+               "RocksDBMerge\n";
 
         return -1;
     }

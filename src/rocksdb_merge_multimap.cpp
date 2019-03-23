@@ -9,6 +9,7 @@
 #include <rocksdb/table.h>
 
 #include <iostream>
+#include <thread>
 
 namespace sse {
 namespace insecure {
@@ -164,6 +165,11 @@ RocksDBMergeMultiMap::RocksDBMergeMultiMap(const std::string& path)
 
     options.allow_concurrent_memtable_write
         = options.memtable_factory->IsInsertConcurrentlySupported();
+
+    options.IncreaseParallelism(std::thread::hardware_concurrency());
+    std::cerr << "Max background jobs: " << options.max_background_jobs << "\n";
+
+    options.write_buffer_size = 1024 * 1024; // 1MB
 
     options.merge_operator.reset(new ResultListMergeOperator);
 
