@@ -77,6 +77,6 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(
         std::make_pair(&create_std_multimap, "StdMultimap"),
         std::make_pair(&create_rocksdb_multimap, "RocksDBMultimap"),
-        std::make_pair(&create_rocksdb_multimap, "RocksDBMergeMultimap")),
+        std::make_pair(&create_rocksdb_merge_multimap, "RocksDBMergeMultimap")),
     IndexPrintToStringParamName());
 } // namespace sse
