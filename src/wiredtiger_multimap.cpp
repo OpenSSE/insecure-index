@@ -111,8 +111,8 @@ void WiredTigerMultimap::insert(const Index::keyword_type& keyword,
     }
 
     bool                  insert_new_entry = (ret == WT_NOTFOUND);
-    Index::document_type* doc_list         = nullptr;
     WT_ITEM               value;
+    Index::document_type* doc_list = nullptr;
 
     if (insert_new_entry) {
         value.data = &document;
@@ -123,14 +123,15 @@ void WiredTigerMultimap::insert(const Index::keyword_type& keyword,
         if (ret != 0) {
             std::cerr << "Insert: Error when getting the value for keyword \""
                       << keyword << "\"\ncode: " << std::to_string(ret) << "\n";
+            return;
         }
 
+        size_t n_elts = value.size / sizeof(document);
+
+        doc_list = new Index::document_type[n_elts + 1];
         const Index::document_type* old_list
             = reinterpret_cast<const Index::document_type*>(value.data);
-        Index::document_type* doc_list
-            = new Index::document_type[value.size + 1];
 
-        size_t n_elts = value.size / sizeof(document);
 
         std::copy(old_list, old_list + n_elts, doc_list);
         doc_list[n_elts] = document;
@@ -152,6 +153,7 @@ void WiredTigerMultimap::insert(const Index::keyword_type& keyword,
         std::cerr << "Insert: Error when reseting the cursor for keyword \""
                   << keyword << "\"\ncode: " << std::to_string(ret) << "\n";
     }
+
     delete[] doc_list;
 }
 
