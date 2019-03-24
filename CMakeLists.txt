@@ -4,10 +4,14 @@ project(
 )
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/externals/sanitizers-cmake/cmake")
 
 find_package(RocksDB REQUIRED)
 find_package(WiredTiger REQUIRED)
 find_package(spdlog REQUIRED)
+
+# Find Sanitizers
+find_package(Sanitizers)
 
 add_library(
     implementations
@@ -54,6 +58,7 @@ if(${CMAKE_VERSION} VERSION_GREATER "3.10.0")
 endif()
 
 add_executable(check test/index_test.cpp test/zipf_test.cpp test/utility.cpp)
+add_sanitizers(check)
 
 target_link_libraries(check gtest_main implementations)
 

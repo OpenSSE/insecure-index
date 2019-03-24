@@ -31,7 +31,9 @@ WiredTigerMultimap::WiredTigerMultimap(const std::string& path)
 
     // Create the table
     ret = m_wt_session->create(
-        m_wt_session, "table:index", "key_format=S,value_format=u");
+        m_wt_session,
+        "table:index",
+        "key_format=S,value_format=u,access_pattern_hint=random");
 
     if (ret != 0) {
         throw std::runtime_error("Unable to create a table. Error code: "
