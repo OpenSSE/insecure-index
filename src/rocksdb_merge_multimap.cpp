@@ -167,7 +167,6 @@ RocksDBMergeMultiMap::RocksDBMergeMultiMap(const std::string& path)
         = options.memtable_factory->IsInsertConcurrentlySupported();
 
     options.IncreaseParallelism(std::thread::hardware_concurrency());
-    std::cerr << "Max background jobs: " << options.max_background_jobs << "\n";
 
     options.write_buffer_size = 1024 * 1024; // 1MB
 

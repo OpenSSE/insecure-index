@@ -3,6 +3,7 @@
 #include "rocksdb_merge_multimap.hpp"
 #include "rocksdb_multimap.hpp"
 #include "utils.hpp"
+#include "wiredtiger_multimap.hpp"
 #include "zipfian_distribution.hpp"
 
 #include <cstdlib>
@@ -26,6 +27,15 @@ sse::insecure::Index* create_rocksdb_merge_multimap(const std::string& path)
 {
     return new sse::insecure::RocksDBMergeMultiMap(path);
 }
+
+sse::insecure::Index* create_wiredtiger_multimap(const std::string& path)
+{
+    // create the directory
+    sse::utility::create_directory(path, static_cast<mode_t>(0700));
+
+    return new sse::insecure::WiredTigerMultimap(path);
+}
+
 
 struct DBCreationBenchmark : public sse::Benchmark
 {
@@ -92,8 +102,10 @@ int main(int argc, char* argv[])
         std::cerr
             << "Usage: bench_util <bench_db_path> <index_type> <n_keywords> "
                "<n_entries>\n\t<index_type> must be "
-               "chosen from the following list:\n\t\t RocksDB\n\t\t "
-               "RocksDBMerge\n";
+               "chosen from the following list:\n"
+               "\t\tRocksDB\n "
+               "\t\tRocksDBMerge\n "
+               "\t\tWiredTiger\n";
 
         return -1;
     }
@@ -110,9 +122,16 @@ int main(int argc, char* argv[])
     } else if (strcasecmp(arg_index_type, "RocksDBMerge") == 0) {
         index_factory = &create_rocksdb_merge_multimap;
         index_type    = "RocksDBMerge";
+    } else if (strcasecmp(arg_index_type, "WiredTiger") == 0) {
+        index_factory = &create_wiredtiger_multimap;
+        index_type    = "WiredTiger";
     } else {
         std::cerr << "Invalid index type. <index_type> must be "
-                     "chosen from the following list:\n\t\t RocksDB\n";
+                     "chosen from the following list:\n"
+                     "\t\tRocksDB\n "
+                     "\t\tRocksDBMerge\n "
+                     "\t\tWiredTiger\n";
+        ;
         return -1;
     }
 
