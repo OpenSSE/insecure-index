@@ -29,6 +29,11 @@ public:
 
 
     static bool deserialize_document_list(
+        const char*                        data,
+        size_t                             data_length,
+        std::vector<Index::document_type>* result);
+
+    static bool deserialize_document_list(
         const std::string&                 data,
         std::vector<Index::document_type>* result);
     static bool deserialize_document_list(

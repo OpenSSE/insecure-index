@@ -6,6 +6,7 @@ project(
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
 find_package(RocksDB REQUIRED)
+find_package(WiredTiger REQUIRED)
 find_package(spdlog REQUIRED)
 
 add_library(
@@ -14,7 +15,8 @@ add_library(
     src/index.cpp
     src/std_multimap.cpp
     src/rocksdb_multimap.cpp
-    src/rocksdb_merge_multimap
+    src/rocksdb_merge_multimap.cpp
+    src/wiredtiger_multimap.cpp
     src/utils.cpp
     src/logger.cpp
 )
@@ -23,9 +25,15 @@ target_include_directories(
     implementations
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src
     PUBLIC ${ROCKSDB_INCLUDE_DIRS}
+    PUBLIC ${WIREDTIGER_INCLUDE_DIRS}
 )
 
-target_link_libraries(implementations ${ROCKSDB_LIBRARIES} spdlog::spdlog)
+target_link_libraries(
+    implementations
+    ${ROCKSDB_LIBRARIES}
+    ${WIREDTIGER_LIBRARIES}
+    spdlog::spdlog
+)
 
 target_compile_features(
     implementations

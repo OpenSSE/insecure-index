@@ -7,6 +7,7 @@
 #include "std_multimap.hpp"
 #include "utility.hpp"
 #include "utils.hpp"
+#include "wiredtiger_multimap.hpp"
 
 #include <algorithm>
 #include <memory>
@@ -31,6 +32,13 @@ sse::insecure::Index* create_rocksdb_multimap(const std::string& path)
 sse::insecure::Index* create_rocksdb_merge_multimap(const std::string& path)
 {
     return new sse::insecure::RocksDBMergeMultiMap(path);
+}
+
+sse::insecure::Index* create_wiredtiger_multimap(const std::string& path)
+{
+    // create the directory
+    utility::create_directory(path, static_cast<mode_t>(0700));
+    return new sse::insecure::WiredTigerMultimap(path);
 }
 
 class IndexTest
@@ -77,6 +85,7 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(
         std::make_pair(&create_std_multimap, "StdMultimap"),
         std::make_pair(&create_rocksdb_multimap, "RocksDBMultimap"),
-        std::make_pair(&create_rocksdb_merge_multimap, "RocksDBMergeMultimap")),
+        std::make_pair(&create_rocksdb_merge_multimap, "RocksDBMergeMultimap"),
+        std::make_pair(&create_wiredtiger_multimap, "WiredTigerMultimap")),
     IndexPrintToStringParamName());
 } // namespace sse
