@@ -10,6 +10,7 @@
 
 #include <atomic>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <string>
 #include <thread>
@@ -47,12 +48,13 @@ struct DBCreationBenchmark : public sse::Benchmark
     }
 };
 
+using database_stats_type = std::unordered_map<size_t, std::atomic<size_t>>;
 
-void create_test_database(const std::string& base_path,
-                          const std::string& index_type,
-                          CreateIndexFunc*   index_factory,
-                          const size_t       n_keywords,
-                          const size_t       n_entries)
+database_stats_type create_test_database(const std::string& base_path,
+                                         const std::string& index_type,
+                                         CreateIndexFunc*   index_factory,
+                                         const size_t       n_keywords,
+                                         const size_t       n_entries)
 {
     std::string path = base_path + "/" + index_type;
 
@@ -69,6 +71,7 @@ void create_test_database(const std::string& base_path,
         doc_distrib;
 
     std::atomic<size_t> n_entries_processed{0};
+    database_stats_type n_entries_per_kw(n_keywords);
 
     sse::ThroughputBenchmark<size_t> throughput_bench("[" + index_type
                                                           + "] {0} entries/s",
@@ -86,6 +89,7 @@ void create_test_database(const std::string& base_path,
         sse::insecure::Index::document_type doc = doc_distrib(gen);
 
         index->insert(std::to_string(r), doc);
+        n_entries_per_kw[r]++;
     }
 
     throughput_bench.stop();
@@ -94,6 +98,29 @@ void create_test_database(const std::string& base_path,
     throughput_bench_thread.join();
 
     std::cerr << "[" << index_type << "] Database creation completed!\n";
+
+    return n_entries_per_kw;
+}
+
+
+void print_database_stats(const database_stats_type& stats, size_t kw_count)
+{
+    std::cout << "Stats of the database: \n";
+    for (size_t i = 0; i < kw_count; i++) {
+        auto   it  = stats.find(i);
+        size_t val = 0;
+
+        if (it != stats.end()) {
+            val = it->second;
+        }
+        std::cout << i << ":\t\t" << val << "\n";
+    }
+}
+
+void print_database_stats(const database_stats_type& stats)
+{
+    size_t kw_count = stats.size();
+    print_database_stats(stats, kw_count);
 }
 
 int main(int argc, char* argv[])
@@ -153,8 +180,10 @@ int main(int argc, char* argv[])
 
     sse::Benchmark::set_log_to_console();
 
-    create_test_database(
+    database_stats_type stats = create_test_database(
         base_path, index_type, index_factory, n_keywords, n_entries);
+
+    // print_database_stats(stats);
 
     return 0;
 }
