@@ -102,6 +102,31 @@ database_stats_type create_test_database(const std::string& base_path,
     return n_entries_per_kw;
 }
 
+void search_test_database(const std::string& base_path,
+                          const std::string& index_type,
+                          CreateIndexFunc*   index_factory,
+                          const size_t       n_keywords)
+{
+    std::string path = base_path + "/" + index_type;
+
+    std::cerr << "[" << index_type << "] Loading the database at " << path
+              << "\n";
+
+    std::unique_ptr<sse::insecure::Index> index((*index_factory)(path));
+
+    std::cerr << "[" << index_type << "] Start the search benchmark...\n";
+
+
+    for (size_t i = 0; i < n_keywords; i++) {
+        sse::SearchBenchmark bench(index_type);
+        auto                 result = index->search(std::to_string(i));
+
+        bench.set_count(result.size());
+    }
+
+
+    std::cerr << "[" << index_type << "] Search benchmark completed!\n";
+}
 
 void print_database_stats(const database_stats_type& stats, size_t kw_count)
 {
@@ -123,17 +148,26 @@ void print_database_stats(const database_stats_type& stats)
     print_database_stats(stats, kw_count);
 }
 
+
+void print_usage()
+{
+    std::cerr << "Usage: bench_util <bench_db_path> <index_type> <action> "
+                 "<options>"
+                 "\n\t<index_type> must be "
+                 "chosen from the following list:\n"
+                 "\t\tRocksDB\n "
+                 "\t\tRocksDBMerge\n "
+                 "\t\tWiredTiger\n"
+                 "\n\t<action> must be chosen from the following list:\n"
+                 "\t\tgenerate\n "
+                 "\t\tsearch\n ";
+}
 int main(int argc, char* argv[])
 {
-    if (argc <= 4) {
-        std::cerr
-            << "Usage: bench_util <bench_db_path> <index_type> <n_keywords> "
-               "<n_entries>\n\t<index_type> must be "
-               "chosen from the following list:\n"
-               "\t\tRocksDB\n "
-               "\t\tRocksDBMerge\n "
-               "\t\tWiredTiger\n";
+    sse::Benchmark::set_log_to_console();
 
+    if (argc <= 3) {
+        print_usage();
         return -1;
     }
 
@@ -162,28 +196,54 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    if (!sse::utility::is_directory(base_path)
-        && !sse::utility::create_directory(base_path,
-                                           static_cast<mode_t>(0700))) {
-        throw std::runtime_error(std::string(base_path)
-                                 + ": unable to create directory");
+    char* action = argv[3];
+
+    if (strcasecmp(action, "generate") == 0) {
+        if (argc <= 5) {
+            std::cerr << "The \"generate\" action takes two options:\n"
+                         "\t\tgenerate <n_keywords> <n_entries>\n";
+            return -1;
+        }
+        if (!sse::utility::is_directory(base_path)
+            && !sse::utility::create_directory(base_path,
+                                               static_cast<mode_t>(0700))) {
+            throw std::runtime_error(std::string(base_path)
+                                     + ": unable to create directory");
+        }
+
+
+        size_t n_keywords = atoll(argv[4]);
+        size_t n_entries  = atoll(argv[5]);
+
+        std::cerr << "Creating a new index\n";
+        std::cerr << "Chosen index type: " << index_type << "\n";
+        std::cerr << "Number of distinct keywords: "
+                  << std::to_string(n_keywords) << "\n";
+        std::cerr << "Number of entries: " << std::to_string(n_entries) << "\n";
+
+
+        database_stats_type stats = create_test_database(
+            base_path, index_type, index_factory, n_keywords, n_entries);
+
+        // print_database_stats(stats);
+    } else if (strcasecmp(action, "search") == 0) {
+        if (argc <= 4) {
+            std::cerr << "The \"search\" action takes one options:\n"
+                         "\t\tsearch <n_keywords>\n";
+            return -1;
+        }
+        std::cerr << "Search benchmark for index type: " << index_type << "\n";
+
+        size_t n_keywords = atoll(argv[4]);
+
+        search_test_database(base_path, index_type, index_factory, n_keywords);
+    } else {
+        std::cerr << "Invalid action type. <action> must be "
+                     "chosen from the following list:\n"
+                     "\t\tgenerate\n "
+                     "\t\tsearch\n ";
+        ;
+        return -1;
     }
-
-
-    size_t n_keywords = atoll(argv[3]);
-    size_t n_entries  = atoll(argv[4]);
-
-    std::cerr << "Chosen index type: " << index_type << "\n";
-    std::cerr << "Number of distinct keywords: " << std::to_string(n_keywords)
-              << "\n";
-    std::cerr << "Number of entries: " << std::to_string(n_entries) << "\n";
-
-    sse::Benchmark::set_log_to_console();
-
-    database_stats_type stats = create_test_database(
-        base_path, index_type, index_factory, n_keywords, n_entries);
-
-    // print_database_stats(stats);
-
     return 0;
 }
