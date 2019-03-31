@@ -215,7 +215,7 @@ void RocksDBMergeMultiMap::insert(const Index::keyword_type& keyword,
     if (!s.ok()) {
         std::cerr << "Unable to merge pair in the database\nkeyword=" << keyword
                   << "\ndata=" + slice.ToString(true) + "\nRocksdb status: "
-                  << s.ToString();
+                  << s.ToString() << "\n";
     }
 }
 
