@@ -68,8 +68,9 @@ def compute_mean_var(stats):
 
 
 def plot_stats(stats):
-    vals = [stats[k]["max"] for k in stats.keys()]
-    plt.plot(stats.keys(), vals)
+    sorted_list = sorted(stats.keys())
+    vals = [stats[k]["mean"] for k in sorted_list]
+    plt.plot(sorted_list, vals)
     plt.xscale('log')
     plt.show()
 
