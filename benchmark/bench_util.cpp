@@ -165,7 +165,7 @@ void print_usage()
 }
 int main(int argc, char* argv[])
 {
-    sse::Benchmark::set_log_to_console();
+    // sse::Benchmark::set_log_to_console();
 
     if (argc <= 3) {
         print_usage();
@@ -196,6 +196,9 @@ int main(int argc, char* argv[])
         ;
         return -1;
     }
+
+    sse::Benchmark::set_benchmark_file("benchmark_" + index_type + ".log",
+                                       true);
 
     char* action = argv[3];
 

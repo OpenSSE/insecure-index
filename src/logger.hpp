@@ -51,6 +51,8 @@ public:
     template<typename T>
     friend class ProgressIndicator;
 
+    static void set_benchmark_file(const std::string& path,
+                                   bool               log_to_console);
     static void set_benchmark_file(const std::string& path);
     static void set_log_to_console();
 

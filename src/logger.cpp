@@ -61,13 +61,33 @@ void set_logging_level(spdlog::level::level_enum log_level)
 
 std::shared_ptr<spdlog::logger> Benchmark::benchmark_logger_(nullptr);
 
+void Benchmark::set_benchmark_file(const std::string& path, bool log_to_console)
+{
+    auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path);
+    file_sink->set_level(spdlog::level::trace);
+    file_sink->set_pattern("[%Y-%m-%d %T.%e] %v");
+
+
+    if (log_to_console) {
+        auto console_sink
+            = std::make_shared<spdlog::sinks::stderr_color_sink_mt>();
+        console_sink->set_level(spdlog::level::trace);
+        console_sink->set_pattern("[%Y-%m-%d %T.%e] %v");
+
+        benchmark_logger_ = std::shared_ptr<spdlog::logger>(
+            new spdlog::logger("benchmark", {file_sink, console_sink}));
+    } else {
+        benchmark_logger_ = std::shared_ptr<spdlog::logger>(
+            new spdlog::logger("benchmark", file_sink));
+    }
+    benchmark_logger_->set_level(spdlog::level::trace);
+    spdlog::flush_every(std::chrono::seconds(3));
+}
+
+
 void Benchmark::set_benchmark_file(const std::string& path)
 {
-    benchmark_logger_
-        = spdlog::basic_logger_mt<spdlog::async_factory>("benchmark", path);
-    benchmark_logger_->set_level(spdlog::level::trace);
-
-    benchmark_logger_->set_pattern("[%Y-%m-%d %T.%e] %v");
+    Benchmark::set_benchmark_file(path, false);
 }
 
 void Benchmark::set_log_to_console()
