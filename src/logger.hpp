@@ -48,6 +48,9 @@ public:
     template<typename T>
     friend class ThroughputBenchmark;
 
+    template<typename T>
+    friend class ProgressIndicator;
+
     static void set_benchmark_file(const std::string& path);
     static void set_log_to_console();
 
@@ -84,6 +87,17 @@ template<typename T>
 class ThroughputBenchmark
 {
 public:
+    // format must be an {fmt} format string. It is passed the following
+    // arguments:
+    // 0: the exact time elapsed during the sampling interval
+    // 1: the value of the observed variable at the end of the sampling interval
+    // 2: the throughput of the observed variable during the sampling interval
+    // 3: the progression of the observed variable at the end of the sampling
+    // 4: the progression (in percent)
+    //
+    //
+    // If the max_value argument is not used in the constructor, the progression
+    // is not computed and the value 0 is given to the formatting string
     ThroughputBenchmark(std::string                   format,
                         std::chrono::duration<double> sampling_interval,
                         std::atomic<T>&               observed_value)
@@ -96,6 +110,26 @@ public:
         : m_format(std::move(format)),
           m_sampling_interval(std::chrono::seconds(1)),
           m_observed_value(observed_value)
+    {
+    }
+
+    ThroughputBenchmark(std::string                   format,
+                        std::chrono::duration<double> sampling_interval,
+                        std::atomic<T>&               observed_value,
+                        const T&                      max_value)
+        : m_format(std::move(format)), m_sampling_interval(sampling_interval),
+          m_observed_value(observed_value), m_compute_progress(true),
+          m_max_value(max_value)
+    {
+    }
+
+    ThroughputBenchmark(std::string     format,
+                        std::atomic<T>& observed_value,
+                        const T&        max_value)
+        : m_format(std::move(format)),
+          m_sampling_interval(std::chrono::seconds(1)),
+          m_observed_value(observed_value), m_compute_progress(true),
+          m_max_value(max_value)
     {
     }
 
@@ -117,9 +151,21 @@ public:
                 = t2 - t1; // get the duration in seconds
             // compute the throughput
             double throughput = diff_value / time_s.count();
+            // compute the progression
+            double progress = 0.0;
+            if (m_compute_progress) {
+                progress = ((double)new_value) / ((double)m_max_value);
+            }
+
+
             if (Benchmark::benchmark_logger_) {
                 Benchmark::benchmark_logger_->trace(
-                    m_format.c_str(), throughput, time_s.count());
+                    m_format.c_str(),
+                    time_s.count(),   // the time elapsed during the sampling
+                    m_observed_value, // the value at the sampling point
+                    throughput,       // the throughtput during the interval
+                    progress,         // the progress since the beginning
+                    progress * 100);  // the progress percentage
             }
 
             t1         = std::chrono::high_resolution_clock::now();
@@ -145,6 +191,8 @@ private:
 
     std::atomic_bool m_stop{false};
     std::atomic<T>&  m_observed_value;
+    const bool       m_compute_progress{false};
+    const T          m_max_value;
 };
 
 } // namespace sse

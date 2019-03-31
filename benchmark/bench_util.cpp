@@ -73,10 +73,11 @@ database_stats_type create_test_database(const std::string& base_path,
     std::atomic<size_t> n_entries_processed{0};
     database_stats_type n_entries_per_kw(n_keywords);
 
-    sse::ThroughputBenchmark<size_t> throughput_bench("[" + index_type
-                                                          + "] {0} entries/s",
-                                                      std::chrono::seconds(1),
-                                                      n_entries_processed);
+    sse::ThroughputBenchmark<size_t> throughput_bench(
+        "[" + index_type + "] {2} entries/s, progress: {4} \%",
+        std::chrono::seconds(1),
+        n_entries_processed,
+        n_entries);
 
     std::cerr << "[" << index_type << "] Start the database creation...\n";
 
