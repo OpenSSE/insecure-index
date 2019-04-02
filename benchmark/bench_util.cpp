@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <vector>
 
 // constexpr auto base_path = "bench_db/";
 
@@ -48,14 +49,20 @@ struct DBCreationBenchmark : public sse::Benchmark
     }
 };
 
-using database_stats_type = std::unordered_map<size_t, std::atomic<size_t>>;
+using database_stats_type        = std::vector<size_t>;
+using database_atomic_stats_type = std::vector<std::atomic<size_t>>;
 
 database_stats_type create_test_database(const std::string& base_path,
                                          const std::string& index_type,
                                          CreateIndexFunc*   index_factory,
                                          const size_t       n_keywords,
-                                         const size_t       n_entries)
+                                         const size_t       n_entries,
+                                         const size_t       thread_count)
 {
+    if (thread_count < 1) {
+        throw std::invalid_argument("thread_count must be >= 1");
+    }
+
     std::string path = base_path + "/" + index_type;
 
     std::cerr << "[" << index_type << "] Creating the database at " << path
@@ -71,7 +78,7 @@ database_stats_type create_test_database(const std::string& base_path,
         doc_distrib;
 
     std::atomic<size_t> n_entries_processed{0};
-    database_stats_type n_entries_per_kw(n_keywords);
+    // database_stats_type n_entries_per_kw(n_keywords);
 
     sse::ThroughputBenchmark<size_t> throughput_bench(
         "[" + index_type + "] {2} entries/s, progress: {4} \%",
@@ -85,22 +92,58 @@ database_stats_type create_test_database(const std::string& base_path,
 
     std::thread throughput_bench_thread = throughput_bench.run_loop_in_thread();
 
-    for (; n_entries_processed < n_entries; n_entries_processed++) {
-        size_t                              r   = kw_distrib(gen);
-        sse::insecure::Index::document_type doc = doc_distrib(gen);
+    std::vector<database_atomic_stats_type> n_entries_per_kw_vec(thread_count);
+    for (size_t i = 0; i < thread_count; i++) {
+        n_entries_per_kw_vec[i] = database_atomic_stats_type(n_keywords);
+        for (size_t j = 0; j < n_keywords; j++) {
+            n_entries_per_kw_vec[i][j] = 0;
+        }
+    }
 
-        index->insert(std::to_string(r), doc);
-        n_entries_per_kw[r]++;
+    std::vector<std::thread> threads;
+    threads.reserve(thread_count);
+    // n_entries_per_kw_vec.reserve(thread_count);
+
+    // launch the jobs
+    for (size_t i = 0; i < thread_count; i++) {
+        threads.emplace_back(
+            [&](size_t t_id) {
+                n_entries_per_kw_vec[t_id]
+                    = database_atomic_stats_type(n_keywords);
+                for (; n_entries_processed < n_entries; n_entries_processed++) {
+                    size_t                              r   = kw_distrib(gen);
+                    sse::insecure::Index::document_type doc = doc_distrib(gen);
+
+                    index->insert(std::to_string(r), doc);
+                    n_entries_per_kw_vec[t_id][r]++;
+                }
+            },
+            i);
+    }
+
+    for (size_t i = 0; i < thread_count; i++) {
+        threads[i].join();
     }
 
     throughput_bench.stop();
     entire_construction_bench.stop(n_entries);
 
-    throughput_bench_thread.join();
+    // combine the stats
+    database_stats_type ret(n_entries_per_kw_vec[0].begin(),
+                            n_entries_per_kw_vec[0].end());
+
+    for (size_t i = 1; i < thread_count; i++) {
+        for (size_t j = 0; j < n_keywords; j++) {
+            ret[j] += n_entries_per_kw_vec[i][j];
+        }
+    }
 
     std::cerr << "[" << index_type << "] Database creation completed!\n";
 
-    return n_entries_per_kw;
+    throughput_bench_thread.join();
+
+
+    return ret;
 }
 
 void search_test_database(const std::string& base_path,
@@ -133,12 +176,8 @@ void print_database_stats(const database_stats_type& stats, size_t kw_count)
 {
     std::cout << "Stats of the database: \n";
     for (size_t i = 0; i < kw_count; i++) {
-        auto   it  = stats.find(i);
-        size_t val = 0;
+        size_t val = stats[i];
 
-        if (it != stats.end()) {
-            val = it->second;
-        }
         std::cout << i << ":\t\t" << val << "\n";
     }
 }
@@ -218,6 +257,11 @@ int main(int argc, char* argv[])
 
         size_t n_keywords = atoll(argv[4]);
         size_t n_entries  = atoll(argv[5]);
+        size_t n_threads  = 1;
+
+        if (index_type == "RocksDBMerge") {
+            n_threads = 4;
+        }
 
         std::cerr << "Creating a new index\n";
         std::cerr << "Chosen index type: " << index_type << "\n";
@@ -226,8 +270,12 @@ int main(int argc, char* argv[])
         std::cerr << "Number of entries: " << std::to_string(n_entries) << "\n";
 
 
-        database_stats_type stats = create_test_database(
-            base_path, index_type, index_factory, n_keywords, n_entries);
+        database_stats_type stats = create_test_database(base_path,
+                                                         index_type,
+                                                         index_factory,
+                                                         n_keywords,
+                                                         n_entries,
+                                                         n_threads);
 
         // print_database_stats(stats);
     } else if (strcasecmp(action, "search") == 0) {
