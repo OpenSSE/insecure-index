@@ -168,9 +168,16 @@ RocksDBMergeMultiMap::RocksDBMergeMultiMap(const std::string& path)
 
     options.IncreaseParallelism(std::thread::hardware_concurrency());
 
-    options.write_buffer_size = 1024 * 1024; // 1MB
+    options.write_buffer_size       = 32 * 1024 * 1024; // 16MB
+    options.max_write_buffer_number = 4;
 
     options.merge_operator.reset(new ResultListMergeOperator);
+
+    options.allow_mmap_reads  = true;
+    options.allow_mmap_writes = true;
+
+    options.compression            = rocksdb::kNoCompression;
+    options.bottommost_compression = rocksdb::kDisableCompressionOption;
 
     rocksdb::DB*    database;
     rocksdb::Status status = rocksdb::DB::Open(options, path, &database);
