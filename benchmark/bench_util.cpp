@@ -260,7 +260,7 @@ int main(int argc, char* argv[])
         size_t n_threads  = 1;
 
         if (index_type == "RocksDBMerge") {
-            n_threads = 4;
+            n_threads = 1;
         }
 
         std::cerr << "Creating a new index\n";

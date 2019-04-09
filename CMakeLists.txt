@@ -13,6 +13,8 @@ find_package(spdlog REQUIRED)
 # Find Sanitizers
 find_package(Sanitizers)
 
+add_compile_options(-fno-rtti)
+
 add_library(
     implementations
     SHARED
