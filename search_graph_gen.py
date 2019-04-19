@@ -21,6 +21,9 @@ def parse_file(f):
         # print(line)
         m = prog.search(line)
 
+        if m is None:
+            continue
+
         json_data = json.loads(m.group(0))
         # print(json_data)
 
