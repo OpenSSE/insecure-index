@@ -107,7 +107,8 @@ Benchmark::Benchmark(std::string format)
 void Benchmark::stop()
 {
     if (!stopped_) {
-        end_ = std::chrono::high_resolution_clock::now();
+        end_     = std::chrono::high_resolution_clock::now();
+        stopped_ = true;
     }
 }
 
