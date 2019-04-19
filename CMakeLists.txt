@@ -7,6 +7,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/externals/sanitizers-cmake/cmake")
 
 find_package(RocksDB REQUIRED)
+set(CMAKE_BUILD_RPATH "${HOME}/Code/rocksdb_install/lib")
 find_package(WiredTiger REQUIRED)
 find_package(spdlog REQUIRED)
 
