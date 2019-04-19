@@ -163,9 +163,13 @@ void search_test_database(const std::string& base_path,
 
     for (size_t i = 0; i < n_keywords; i++) {
         sse::SearchBenchmark bench(index_type);
-        auto                 result = index->search(std::to_string(i));
+        sse::insecure::rocksdb_merge_counter_ = 0;
+        auto result = index->search(std::to_string(i));
 
         bench.set_count(result.size());
+        bench.set_locality(sse::insecure::rocksdb_merge_counter_);
+
+        bench.stop_trace();
     }
 
 

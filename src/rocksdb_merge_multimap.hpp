@@ -12,6 +12,7 @@ class DB;
 namespace sse {
 namespace insecure {
 
+extern std::atomic<size_t> rocksdb_merge_counter_;
 
 class RocksDBMergeMultiMap : public Index
 {

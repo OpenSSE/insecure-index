@@ -119,31 +119,65 @@ void Benchmark::stop(size_t count)
     }
 }
 
-Benchmark::~Benchmark()
+void Benchmark::trace(std::chrono::duration<double, std::milli> time_ms,
+                      std::chrono::duration<double, std::milli> time_per_item)
 {
-    stop();
-
-    std::chrono::duration<double, std::milli> time_ms = end_ - begin_;
-
-    auto time_per_item = time_ms;
-
-    if (count_ > 1) {
-        time_per_item /= count_;
-    }
-
     if (benchmark_logger_) {
         benchmark_logger_->trace(
             format_.c_str(), count_, time_ms.count(), time_per_item.count());
     }
 }
 
+void Benchmark::stop_trace()
+{
+    if (!stopped_) {
+        stop();
+
+        std::chrono::duration<double, std::milli> time_ms = end_ - begin_;
+
+        auto time_per_item = time_ms;
+
+        if (count_ > 1) {
+            time_per_item /= count_;
+        }
+
+        trace(time_ms, time_per_item);
+    }
+}
+
+Benchmark::~Benchmark()
+{
+    stop_trace();
+}
+
 constexpr auto search_JSON_begin
     = "{{ \"message\" : \""; // double { to escape it in fmt
-constexpr auto search_JSON_end
-    = "\", \"items\" : {0}, \"time\" : {1}, \"time/item\" : {2} }}";
+constexpr auto search_JSON_end = "\", \"items\" : {0}, \"time\" : {1}, "
+                                 "\"time/item\" : {2}, \"locality\" : {3} }}";
 
 SearchBenchmark::SearchBenchmark(std::string message)
     : Benchmark(search_JSON_begin + std::move(message) + search_JSON_end)
 {
 }
+
+void SearchBenchmark::trace(
+    std::chrono::duration<double, std::milli> time_ms,
+    std::chrono::duration<double, std::milli> time_per_item)
+{
+    if (benchmark_logger_) {
+        benchmark_logger_->trace(format_.c_str(),
+                                 count_,
+                                 time_ms.count(),
+                                 time_per_item.count(),
+                                 locality_);
+    }
+}
+SearchBenchmark::~SearchBenchmark()
+{
+    stop_trace(); // calling a virtual method inside the destructor does not
+                  // work properly. Instead, duplicate the destructor code,
+                  // counting on the fact that the first destructor to be called
+                  // is the one of the derived class.
+}
+
 } // namespace sse

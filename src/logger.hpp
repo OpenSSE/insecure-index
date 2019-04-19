@@ -61,6 +61,7 @@ public:
 
     void stop();
     void stop(size_t count);
+    void stop_trace();
 
     inline void set_count(size_t c)
     {
@@ -70,6 +71,9 @@ public:
     virtual ~Benchmark();
 
 protected:
+    virtual void trace(std::chrono::duration<double, std::milli> time_ms,
+                       std::chrono::duration<double, std::milli> time_per_item);
+
     static std::shared_ptr<spdlog::logger> benchmark_logger_;
 
     std::string                                    format_;
@@ -83,6 +87,20 @@ class SearchBenchmark : public Benchmark
 {
 public:
     explicit SearchBenchmark(std::string message);
+
+    void trace(
+        std::chrono::duration<double, std::milli> time_ms,
+        std::chrono::duration<double, std::milli> time_per_item) override;
+
+    void set_locality(size_t loc)
+    {
+        locality_ = loc;
+    }
+
+    ~SearchBenchmark() override;
+
+private:
+    size_t locality_;
 };
 
 template<typename T>

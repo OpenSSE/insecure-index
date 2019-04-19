@@ -14,6 +14,7 @@
 namespace sse {
 namespace insecure {
 
+std::atomic<size_t> rocksdb_merge_counter_{0};
 
 class ResultListMergeOperator : public rocksdb::AssociativeMergeOperator
 {
@@ -137,6 +138,7 @@ public:
                        std::string*          new_value,
                        rocksdb::Logger*      logger) const override
     {
+        rocksdb_merge_counter_++;
         if (!existing_value) {
             *new_value = std::string(value.data(), value.size());
             return true;
@@ -193,7 +195,9 @@ RocksDBMergeMultiMap::RocksDBMergeMultiMap(const std::string& path)
 std::vector<Index::document_type> RocksDBMergeMultiMap::search(
     const Index::keyword_type& keyword) const
 {
-    std::string     data;
+    std::string data;
+
+    // set the locality counter to 0
     rocksdb::Status s = db_->Get(rocksdb::ReadOptions(), keyword, &data);
 
     if (s.ok()) {
