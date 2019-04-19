@@ -12,6 +12,8 @@ def parse_file(f):
     stats = dict()
     lines = f.readlines()
 
+    tot_items = 0
+
     # We suppose that the benchark log has a spdlog format ending with %v
     pattern = r"(\{.*\})$"
     prog = re.compile(pattern)
@@ -52,8 +54,9 @@ def parse_file(f):
         stats[items]["counter"] = counter+1
         stats[items]["min"] = min(min_v, time_per_item)
         stats[items]["max"] = max(max_v, time_per_item)
+        tot_items = tot_items + items
 
-    return stats
+    return (stats, tot_items)
 
 
 def compute_mean_var(stats):
@@ -90,8 +93,10 @@ if __name__ == "__main__":
 
     print("Parsing {0}".format(
         args.in_file[0].name))
-    stats = parse_file(args.in_file[0])
+    (stats, tot_items) = parse_file(args.in_file[0])
 
+    print("Compute statistics one {0} items".format(tot_items))
     stats2 = compute_mean_var(stats)
+    print("Plot statistics")
     plot_stats(stats2)
     print("Done")
