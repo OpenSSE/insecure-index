@@ -26,6 +26,7 @@ add_library(
     src/wiredtiger_multimap.cpp
     src/utils.cpp
     src/logger.cpp
+    src/file_benchmark.cpp
 )
 
 target_include_directories(
@@ -72,3 +73,7 @@ else()
 endif()
 
 add_subdirectory(benchmark)
+
+add_executable(playground playground.cpp)
+target_link_libraries(playground implementations)
+add_sanitizers(playground)

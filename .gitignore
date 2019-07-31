@@ -71,10 +71,8 @@ Temporary Items
 build/
 DerivedData
 
-## CI generated
-deps
-grpc
-rocksdb
+test.bin
+bench_read
 
 ## Various settings
 *.pbxuser
