@@ -139,3 +139,41 @@ size_t FileBenchmark::random_unaligned_read(uint8_t* buffer, size_t n_byte)
 
     return ret;
 }
+
+size_t next_power_of_2(size_t n)
+{
+    // super smart and fast way to compute the smallest power of 2 greater than
+    // or equal to n.
+    //
+    n--; // to support n = 2^x
+    // set to 1 all the bits after the leftmost bit set to 1
+    n |= n >> 1;  // set the two leftmost bits to 1
+    n |= n >> 2;  // set the 4 leftmost bits to 1
+    n |= n >> 4;  // set the 8 leftmost bits to 1
+    n |= n >> 8;  // set the 16 leftmost bits to 1
+    n |= n >> 16; // set the 32 leftmost bits to 1
+    n |= n >> 32; // set the 64 leftmost bits to 1
+    n++;
+    return n;
+}
+
+size_t FileBenchmark::random_aligned_read(uint8_t* buffer, size_t n_byte)
+{
+    // compute the alignment
+    // we take the nearest power of two greater or equal than n_byte
+    const size_t alignment = next_power_of_2(n_byte);
+
+    // chose a random position
+    std::uniform_int_distribution<off_t> uniform_dist(0, m_size / alignment);
+    off_t offset = uniform_dist(m_random_generator) * alignment;
+
+    ssize_t ret = pread(m_file_descriptor, buffer, n_byte, offset);
+
+    if (ret == -1) {
+        throw std::runtime_error("Error when reading file ; errno "
+                                 + std::to_string(errno) + "(" + strerror(errno)
+                                 + ")");
+    }
+
+    return ret;
+}

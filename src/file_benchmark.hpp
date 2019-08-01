@@ -15,6 +15,7 @@ public:
 
 
     size_t random_unaligned_read(uint8_t* buffer, size_t n_byte);
+    size_t random_aligned_read(uint8_t* buffer, size_t n_byte);
 
 private:
     void fill(uint8_t byte, size_t length);
