@@ -16,6 +16,33 @@ find_package(Sanitizers)
 
 add_compile_options(-fno-rtti)
 
+# From RocksDB's CMakeLists.txt
+if(CMAKE_SYSTEM_NAME MATCHES "Cygwin")
+  add_definitions(-fno-builtin-memcmp -DCYGWIN)
+elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+  add_definitions(-DOS_MACOSX)
+elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+  add_definitions(-DOS_LINUX)
+elseif(CMAKE_SYSTEM_NAME MATCHES "SunOS")
+  add_definitions(-DOS_SOLARIS)
+elseif(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+  add_definitions(-DOS_FREEBSD)
+elseif(CMAKE_SYSTEM_NAME MATCHES "NetBSD")
+  add_definitions(-DOS_NETBSD)
+elseif(CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
+  add_definitions(-DOS_OPENBSD)
+elseif(CMAKE_SYSTEM_NAME MATCHES "DragonFly")
+  add_definitions(-DOS_DRAGONFLYBSD)
+elseif(CMAKE_SYSTEM_NAME MATCHES "Android")
+  add_definitions(-DOS_ANDROID)
+elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
+  add_definitions(-DWIN32 -DOS_WIN -D_MBCS -DWIN64 -DNOMINMAX)
+  if(MINGW)
+    add_definitions(-D_WIN32_WINNT=_WIN32_WINNT_VISTA)
+  endif()
+endif()
+
+
 add_library(
     implementations
     SHARED

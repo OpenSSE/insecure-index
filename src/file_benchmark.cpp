@@ -44,6 +44,12 @@ FileBenchmark::FileBenchmark(const std::string& filename,
 {
     int flags = (O_CREAT | O_RDWR);
 
+    if (direct_io) {
+#if !defined(OS_MACOSX) && !defined(OS_OPENBSD) && !defined(OS_SOLARIS)
+        flags |= O_DIRECT;
+#endif
+    }
+
     int fd = open(filename.c_str(), flags, 0644);
 
     if (fd == -1) {
@@ -53,6 +59,18 @@ FileBenchmark::FileBenchmark(const std::string& filename,
                                  + "; errno " + std::to_string(errno) + "("
                                  + strerror(errno) + ")");
     }
+
+    if (direct_io) {
+#ifdef OS_MACOSX
+        if (fcntl(fd, F_NOCACHE, 1) == -1) {
+            close(fd);
+            throw std::runtime_error(
+                "Error calling fcntl F_NOCACHE on file " + filename + "; errno "
+                + std::to_string(errno) + "(" + strerror(errno) + ")");
+        }
+#endif
+    }
+
     m_file_descriptor = fd;
 
 
