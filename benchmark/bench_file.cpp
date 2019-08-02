@@ -166,7 +166,8 @@ BENCHMARK(DirectAlignedRead)
     ->Args({32UL << 30, 2UL << 20})
     ->Args({32UL << 30, 4UL << 20})
     ->Args({32UL << 30, 16UL << 20})
-    ->Args({32UL << 30, 32UL << 20});
+    ->Args({32UL << 30, 32UL << 20})
+    ->Args({32UL << 30, 64UL << 20});
 
 
 BENCHMARK_MAIN();

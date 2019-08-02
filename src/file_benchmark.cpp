@@ -101,7 +101,7 @@ FileBenchmark::~FileBenchmark()
 
 void FileBenchmark::fill(uint8_t byte, size_t length)
 {
-    constexpr size_t kBufferSize = 1 << 20; // 1MB
+    constexpr size_t kBufferSize = 4 << 20; // 4MB
     uint8_t          buffer[kBufferSize];
     memset(buffer, byte, kBufferSize);
 
@@ -144,7 +144,10 @@ size_t next_power_of_2(size_t n)
 {
     // super smart and fast way to compute the smallest power of 2 greater than
     // or equal to n.
-    //
+    // From
+    // https://www.geeksforgeeks.org/smallest-power-of-2-greater-than-or-equal-to-n/
+    // (method 4)
+
     n--; // to support n = 2^x
     // set to 1 all the bits after the leftmost bit set to 1
     n |= n >> 1;  // set the two leftmost bits to 1
