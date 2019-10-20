@@ -1,4 +1,8 @@
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+
 find_package(benchmark)
+find_package(Threads REQUIRED)
+
 
 if(benchmark_FOUND)
     add_custom_target(bench)
@@ -28,5 +32,5 @@ add_bench_target(benchmark_file bench_file.cpp)
 
 
 add_executable(bench_util bench_util.cpp)
-target_link_libraries(bench_util implementations)
+target_link_libraries(bench_util implementations Threads::Threads)
 add_sanitizers(bench_util)

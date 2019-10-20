@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include <exception>
+#include <stdexcept>
 #include <random>
 
 // Implementation of the Zipf's law.
