@@ -86,6 +86,10 @@ BENCHMARK(AlignedRead)
     ->Args({32UL << 30, 32UL << 20});
 //->Iterations(500);
 
+
+// 'Direct' unaligned read are only available on Mac OS
+#ifdef OS_MACOSX
+
 static void DirectUnalignedRead(benchmark::State& state)
 {
     const size_t bench_size = state.range(0);
@@ -97,12 +101,19 @@ static void DirectUnalignedRead(benchmark::State& state)
 
     FileBenchmark fb(filename, bench_size, 0xAA, true);
 
-    std::vector<uint8_t> buffer(read_size);
+    uint8_t* buffer;
+    int ret = posix_memalign((reinterpret_cast<void**>(&buffer)), 4096, read_size);
+
+    if(ret != 0) {
+        throw std::runtime_error("Unable to do an aligned allocation");
+    }
 
     for (auto _ : state) {
-        fb.random_unaligned_read(buffer.data(), read_size);
+        fb.random_unaligned_read(buffer, read_size);
     }
     state.SetBytesProcessed(read_size * state.iterations());
+
+    free(buffer);
 }
 
 BENCHMARK(DirectUnalignedRead)
@@ -126,6 +137,8 @@ BENCHMARK(DirectUnalignedRead)
     ->Args({32UL << 30, 16UL << 20})
     ->Args({32UL << 30, 32UL << 20});
 
+#endif
+
 
 static void DirectAlignedRead(benchmark::State& state)
 {
@@ -138,12 +151,19 @@ static void DirectAlignedRead(benchmark::State& state)
 
     FileBenchmark fb(filename, bench_size, 0xAA, true);
 
-    std::vector<uint8_t> buffer(read_size);
+    uint8_t* buffer;
+    int ret = posix_memalign((reinterpret_cast<void**>(&buffer)), 4096, read_size);
+
+    if(ret != 0) {
+        throw std::runtime_error("Unable to do an aligned allocation");
+    }
 
     for (auto _ : state) {
-        fb.random_aligned_read(buffer.data(), read_size);
+        fb.random_aligned_read(buffer, read_size);
     }
     state.SetBytesProcessed(read_size * state.iterations());
+
+    free(buffer);
 }
 
 
