@@ -34,3 +34,14 @@ add_bench_target(benchmark_file bench_file.cpp)
 add_executable(bench_util bench_util.cpp)
 target_link_libraries(bench_util implementations Threads::Threads)
 add_sanitizers(bench_util)
+
+
+
+
+find_package(OpenMP)
+
+if(OpenMP_CXX_FOUND)
+    add_executable(parallel_read parallel_read.cpp)
+    target_link_libraries(parallel_read implementations OpenMP::OpenMP_CXX)
+    add_sanitizers(parallel_read)
+endif()
