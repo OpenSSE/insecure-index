@@ -79,6 +79,7 @@ FileBenchmark::FileBenchmark(const std::string& filename,
     fstat(m_file_descriptor, &st);
     size_t original_size = st.st_size;
 
+    std::cout << "File size: " << original_size << " bytes\n" << std::flush;
 
     if (original_size < size) {
         std::cout << "Filling " << size - original_size << " bytes..."
@@ -86,7 +87,8 @@ FileBenchmark::FileBenchmark(const std::string& filename,
         // get to the end of the file
         lseek(m_file_descriptor, 0UL, SEEK_END);
         // fill the file with the remaining bytes
-        fill(fill_byte, size - original_size);
+        // fill(fill_byte, size - original_size);
+        fill_consecutive(original_size / sizeof(size_t), size - original_size);
         // re-position the head at the beginning
         lseek(m_file_descriptor, 0UL, SEEK_SET);
 
@@ -115,6 +117,9 @@ void FileBenchmark::fill(uint8_t byte, size_t length)
             bool success
                 = write_wrapper(m_file_descriptor, buffer, chunk_length);
             if (!success) {
+                std::cerr << ("Error when writing file ; errno "
+                              + std::to_string(errno) + "(" + strerror(errno)
+                              + ")\n");
                 throw std::runtime_error("Error when writing file ; errno "
                                          + std::to_string(errno) + "("
                                          + strerror(errno) + ")");
@@ -123,11 +128,63 @@ void FileBenchmark::fill(uint8_t byte, size_t length)
     }
 }
 
-size_t FileBenchmark::random_unaligned_read(uint8_t* buffer, size_t n_byte)
+void FileBenchmark::fill_consecutive(size_t start, size_t length)
+{
+    constexpr size_t kBufferSizeBytes = 4 << 20;                         // 4MB
+    constexpr size_t kBufferNumElts = kBufferSizeBytes / sizeof(size_t); // 4MB
+    size_t           buffer[kBufferNumElts];
+
+    // init the buffer
+    for (size_t counter = start, i = 0; i < kBufferNumElts; i++, counter++) {
+        buffer[i] = counter;
+    }
+
+    size_t remaining_length = length;
+
+    for (; remaining_length >= kBufferSizeBytes;
+         remaining_length -= kBufferSizeBytes) {
+        bool success
+            = write_wrapper(m_file_descriptor, buffer, kBufferSizeBytes);
+        if (!success) {
+            std::cerr << ("Error when writing file ; errno "
+                          + std::to_string(errno) + "(" + strerror(errno)
+                          + ")\n");
+            throw std::runtime_error("Error when writing file ; errno "
+                                     + std::to_string(errno) + "("
+                                     + strerror(errno) + ")");
+        }
+
+        // update the buffer
+        for (size_t i = 0; i < kBufferNumElts; i++) {
+            buffer[i] += kBufferNumElts;
+        }
+    }
+
+    if (remaining_length > 0) {
+        bool success
+            = write_wrapper(m_file_descriptor, buffer, remaining_length);
+        if (!success) {
+            std::cerr << ("Error when writing file ; errno "
+                          + std::to_string(errno) + "(" + strerror(errno)
+                          + ")\n");
+            throw std::runtime_error("Error when writing file ; errno "
+                                     + std::to_string(errno) + "("
+                                     + strerror(errno) + ")");
+        }
+    }
+}
+
+size_t FileBenchmark::random_unaligned_read(uint8_t* buffer,
+                                            size_t   n_byte,
+                                            off_t*   location)
 {
     // chose a random position
     std::uniform_int_distribution<off_t> uniform_dist(0, m_size - n_byte);
     off_t offset = uniform_dist(m_random_generator);
+
+    if (location != nullptr) {
+        *location = offset;
+    }
 
     ssize_t ret = pread(m_file_descriptor, buffer, n_byte, offset);
 
@@ -160,7 +217,9 @@ size_t next_power_of_2(size_t n)
     return n;
 }
 
-size_t FileBenchmark::random_aligned_read(uint8_t* buffer, size_t n_byte)
+size_t FileBenchmark::random_aligned_read(uint8_t* buffer,
+                                          size_t   n_byte,
+                                          off_t*   location)
 {
     // compute the alignment
     // we take the nearest power of two greater or equal than n_byte
@@ -169,6 +228,10 @@ size_t FileBenchmark::random_aligned_read(uint8_t* buffer, size_t n_byte)
     // chose a random position
     std::uniform_int_distribution<off_t> uniform_dist(0, m_size / alignment);
     off_t offset = uniform_dist(m_random_generator) * alignment;
+
+    if (location != nullptr) {
+        *location = offset;
+    }
 
     ssize_t ret = pread(m_file_descriptor, buffer, n_byte, offset);
 
