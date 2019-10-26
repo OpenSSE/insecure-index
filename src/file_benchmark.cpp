@@ -79,7 +79,7 @@ FileBenchmark::FileBenchmark(const std::string& filename,
     fstat(m_file_descriptor, &st);
     size_t original_size = st.st_size;
 
-    std::cout << "File size: " << original_size << " bytes\n" << std::flush;
+    // std::cout << "File size: " << original_size << " bytes\n" << std::flush;
 
     if (original_size < size) {
         std::cout << "Filling " << size - original_size << " bytes..."
